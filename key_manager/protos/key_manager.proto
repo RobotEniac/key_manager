@@ -20,7 +20,14 @@ service KeyManager {
 }
 
 message AsymDecryptRequest{
-
+  CryptoAlgType type = 1;
+  bytes msg = 2;
+  string pri_key = 3; // if type == SM2, pri_key is key index
+}
+message AsymDecryptResponse{
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+  bytes msg = 3;
 }
 message AsymDecryptResponse{}
 
@@ -104,4 +111,8 @@ enum DataCloakErrorCode{
   //kms server
   DC_KEY_MANAGER_SM3_HASH_FAILED = 20000001;
   DC_KEY_MANAGER_SM3_HASH_UNKNOWN_TYPE = 20000002;
+
+  //AsymEncrypt/AsymDecrypt
+  DC_CRYPTO_ALG_INVALID = 30000001;
+  DC_CRYPTO_FAILED = 30000002;
 }
