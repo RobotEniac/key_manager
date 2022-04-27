@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.16)
 project(crypto_manager)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -48,7 +48,7 @@ set(_PROTOBUF_PROTOC protobuf::protoc)
 set(_GRPC_GRPCPP gRPC::grpc++)
 set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
-get_filename_component(key_manager_proto "protos/key_manager.proto" ABSOLUTE)
+get_filename_component(key_manager_proto "meili_proto/datacloak/server/key_manager.proto" ABSOLUTE)
 get_filename_component(key_manager_proto_path "${key_manager_proto}" PATH)
 
 set(key_manager_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/key_manager.pb.cc")

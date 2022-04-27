@@ -10,29 +10,29 @@
 #include <iostream>
 #include <string>
 #include <memory>
-using datacloak::server::key_manager::HashRequest;
-using datacloak::server::key_manager::HashResponse;
+using datacloak::server::HashRequest;
+using datacloak::server::HashResponse;
 
-using datacloak::server::key_manager::AsymEncryptRequest;
-using datacloak::server::key_manager::AsymEncryptResponse;
-using datacloak::server::key_manager::AsymDecryptRequest;
-using datacloak::server::key_manager::AsymDecryptResponse;
+using datacloak::server::AsymEncryptRequest;
+using datacloak::server::AsymEncryptResponse;
+using datacloak::server::AsymDecryptRequest;
+using datacloak::server::AsymDecryptResponse;
 
 //Sm2SignWithSm3
 
-using datacloak::server::key_manager::Sm2SignWithSm3Request;
-using datacloak::server::key_manager::Sm2SignWithSm3Response;
+using datacloak::server::Sm2SignWithSm3Request;
+using datacloak::server::Sm2SignWithSm3Response;
 
 //issue cert
-using datacloak::server::key_manager::IssueGmCertRequest;
-using datacloak::server::key_manager::IssueGmCertResponse;
+using datacloak::server::IssueGmCertRequest;
+using datacloak::server::IssueGmCertResponse;
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 namespace datacloak{
-class KeyManagerServer final : public datacloak::server::key_manager::KeyManager::Service{
+class KeyManagerServer final : public datacloak::server::KeyManager::Service{
         Status Hash(ServerContext* context, grpc::ServerReader<HashRequest>* reader, HashResponse* response)override;
         Status AsymEncrypt(ServerContext* context, const AsymEncryptRequest* request,
                            AsymEncryptResponse* response)override;
