@@ -15,12 +15,18 @@
 #include <openssl/engine.h>
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+#include <openssl/x509.h>
+#include <openssl/x509err.h>
 #include <TassAPI4EHVSM.h>
 #include <iostream>
 //
 namespace datacloak{
 
     std::map<std::string, std::string> Crypto::key_map_;
+
+    std::string Crypto::ca_cert;
+    std::string Crypto::ca_private_key;
 
     std::string Crypto::sm3_hash(const std::string &msg) {
         unsigned char hash[SM3_DIGEST_LENGTH] = {0};
@@ -370,6 +376,157 @@ namespace datacloak{
         return std::string{signature};
     }
 
+
+    void Crypto::SetRootKeys(const std::string& root_cert, const std::string& root_private_key) {
+        ca_cert = root_cert;
+        ca_private_key = root_private_key;
+    }
+
+    std::string Crypto::IssueGmCert(const std::string &pub, const std::string &name) {
+        X509 *x509 = nullptr;
+        EVP_PKEY *pk = nullptr;
+        EC_KEY *ec_key = nullptr;
+
+        std::string cert_str = "";
+        X509_NAME *x509_name = nullptr;
+        BIO* root_private_key_bio = nullptr;
+        EVP_PKEY* root_private_key = nullptr;
+        BIO* client_pub_bio = nullptr;
+        EVP_PKEY* client_pub_key = nullptr;
+        BIO* ca_cert_bio = nullptr;
+        X509* root_certificate = nullptr;
+        X509_NAME* issuer_name = nullptr;
+        do{
+#if 0
+            pk = EVP_PKEY_new();
+            if(pk == nullptr){
+                LOG(ERROR) << "EVP_PKEY_new error";
+                break;
+            }
+
+            x509 = X509_new();
+            if(x509 == nullptr){
+                LOG(ERROR) << "X509_new error";
+                break;
+            }
+            ec_key = EC_KEY_new_by_curve_name(NID_sm2);
+            if(!ec_key){
+                LOG(ERROR) << "EC_KEY_new failed";
+                break;
+            }
+            int ret = EC_KEY_generate_key(ec_key);
+            if(ret == 0){
+                LOG(ERROR) << "EC_KEY_generate_key failed";
+                break;
+            }
+
+            int err = EVP_PKEY_assign_EC_KEY(pk, ec_key);
+            if(err == 0){
+                LOG(ERROR) << "EVP_PKEY_assign_EC_KEY error";
+                break;
+            }
+#endif
+            x509 = X509_new();
+            if(x509 == nullptr){
+                LOG(ERROR) << "X509_new error";
+                break;
+            }
+            root_private_key_bio = BIO_new_mem_buf(ca_private_key.c_str(), -1);
+            root_private_key = PEM_read_bio_PrivateKey(root_private_key_bio, NULL, NULL, NULL);
+            if(!root_private_key){
+                LOG(ERROR) << "read ca key failed";
+                break;
+            }
+            client_pub_bio = BIO_new_mem_buf(pub.c_str(), -1);
+            client_pub_key = PEM_read_bio_PUBKEY(client_pub_bio, NULL, NULL, NULL);
+            if(!client_pub_key){
+                LOG(ERROR) << "read client pub key failed";
+                break;
+            }
+            ca_cert_bio = BIO_new_mem_buf(ca_cert.c_str(), -1);
+            root_certificate = PEM_read_bio_X509(ca_cert_bio, NULL, NULL, NULL);
+            if(!root_certificate){
+                LOG(ERROR) << "root certificate read error";
+                break;
+            }
+            issuer_name = X509_get_subject_name(root_certificate);
+            X509_set_version(x509, 2);
+            ASN1_INTEGER_set(X509_get_serialNumber(x509), 1);
+            X509_gmtime_adj(X509_get_notBefore(root_certificate), 0);
+            X509_gmtime_adj(X509_get_notAfter(x509), (long)60 * 60 * 24 * 365);
+            X509_set_pubkey(x509, client_pub_key);
+
+            x509_name = X509_get_subject_name(x509);
+
+            X509_NAME_add_entry_by_txt(x509_name, "C", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("CN"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "ST", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("Guangdong"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "L", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("Shenzhen"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "O", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("DataCloak"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "OU", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("AUTH"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "CN", MBSTRING_ASC, reinterpret_cast<const unsigned char *>(name.c_str()), -1, -1, 0);
+
+
+            add_ext(x509, NID_basic_constraints, const_cast<char *>("critical,CA:FALSE"));
+            add_ext(x509, NID_ext_key_usage, const_cast<char *>("TLS Web Client Authentication,TLS Web Server Authentication "));
+            add_ext(x509, NID_key_usage, const_cast<char *>("critical,Digital Signature,Certificate Sign,CRL Sign "));
+            std::string alt_name = std::string{"DNS:"} + name + ",email:admin@datacloak.com";
+            add_ext(x509, NID_subject_alt_name, const_cast<char *>(alt_name.c_str()));
+
+            X509_set_issuer_name(x509, issuer_name);
+            int err = X509_sign(x509, root_private_key, EVP_sm3());
+            if(err == 0){
+                LOG(ERROR) << "X509_sign error, errno[" << ERR_get_error()  << "], error msg[" <<
+                ERR_error_string(ERR_get_error(), NULL) << "]";
+
+                break;
+            }
+            PEM_write_X509(stderr, x509);
+            BIO* client_cert_bio = BIO_new(BIO_s_mem());
+            PEM_write_bio_X509(client_cert_bio, x509);
+            char cert_buf[102400] = {0};
+            int len = BIO_read(client_cert_bio, cert_buf, 102400);
+            cert_str.assign(cert_buf, cert_buf + len);
+        } while (false);
+        /*
+        X509_NAME *x509_name = nullptr;
+        BIO* root_private_key_bio = nullptr;
+        EVP_PKEY* root_private_key = nullptr;
+        BIO* client_pub_bio = nullptr;
+        EVP_PKEY* client_pub_key = nullptr;
+        BIO* ca_cert_bio = nullptr;
+        X509* root_certificate = nullptr;
+        X509_NAME* issuer_name = nullptr;
+         */
+        if(root_private_key){
+            EVP_PKEY_free(root_private_key);
+        }
+        if(root_private_key_bio){
+            BIO_free(root_private_key_bio);
+        }
+        if(client_pub_key){
+            EVP_PKEY_free(client_pub_key);
+        }
+        if(client_pub_bio){
+            BIO_free(client_pub_bio);
+        }
+
+        return cert_str;
+    }
+
+    int Crypto::add_ext(void *cert, int nid, char *value) {
+        X509 *crt = (X509*)cert;
+        X509_EXTENSION *ex;
+        X509V3_CTX ctx;
+        X509V3_set_ctx_nodb(&ctx);
+        X509V3_set_ctx(&ctx, crt, crt, nullptr, nullptr, 0);
+        ex = X509V3_EXT_conf_nid(nullptr, &ctx, nid, value);
+        if(!ex){
+            return 0;
+        }
+        X509_add_ext(crt, ex, -1);
+        X509_EXTENSION_free(ex);
+        return 1;
+    }
     std::string Crypto::SM2_Encrypt(const std::string& msg, const std::string& pub_key_idx) {
         char *cipher = NULL;
         size_t msg_len = msg.length();
@@ -416,5 +573,6 @@ namespace datacloak{
             driver_Free(&text);
             return ret_s;
         }
+
     }
 }

@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package datacloak.server.key_manager;
@@ -127,3 +128,4 @@ enum DataCloakErrorCode{
   DC_CRYPTO_ALG_INVALID = 30000001;
   DC_CRYPTO_FAILED = 30000002;
 }
+

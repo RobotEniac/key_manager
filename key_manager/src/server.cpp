@@ -102,6 +102,9 @@ namespace datacloak{
 
     Status KeyManagerServer::IssueGmCert(ServerContext *context, const IssueGmCertRequest *request,
                                          IssueGmCertResponse *response) {
+
+        Crypto::IssueGmCert("", "");
+
         return Status::OK;
 
     }
