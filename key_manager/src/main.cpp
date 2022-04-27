@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
             ("t,tls", "enable tls or not", cxxopts::value<bool>()->default_value("false"))
             ("ca", "root public key", cxxopts::value<std::string>())
             ("private", "root private key", cxxopts::value<std::string>())
+            ("index", "private key index", cxxopts::value<std::string>())
             ("h,help", "Print usage")
             ;
     auto result = options.parse(argc, argv);
@@ -37,6 +38,7 @@ int main(int argc, char *argv[]) {
     std::string addr = "";
     std::string ca_cert_path = "";
     std::string ca_private_key_path = "";
+    std::string private_key_index = "";
     bool use_tls = false;
     if(result.count("root"))
         root_cert_path = result["root"].as<std::string>();
@@ -52,7 +54,12 @@ int main(int argc, char *argv[]) {
         ca_cert_path = result["ca"].as<std::string>();
     if(result.count("private"))
         ca_private_key_path = result["private"].as<std::string>();
-
+    if(result.count("index"))
+        private_key_index = result["index"].as<std::string>();
+    if(private_key_index == ""){
+        private_key_index = "55";
+    }
+    datacloak::Crypto::SetKeyIndex(private_key_index);
     if(ca_cert_path == "" || ca_private_key_path == ""){
         LOG(ERROR) << "Need to set root ca info";
         return -1;

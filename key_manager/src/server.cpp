@@ -78,6 +78,19 @@ namespace datacloak{
         return Status::OK;
     }
 
+    Status KeyManagerServer::Sm2VerifyWithSm3(ServerContext *context, const Sm2VerifyWithSm3Request *request,
+                                              Sm2VerifyWithSm3Response *response) {
+
+        bool ret = Crypto::SM2_verify_with_sm3(request->pri_key(), request->sig(), request->msg());
+        if(ret){
+            response->set_error_code(server::key_manager::DC_OK);
+            response->set_error_message("success");
+        }else{
+            response->set_error_code(server::key_manager::DC_KEY_MANAGER_SM3_VERIFY_MSG_SIGN_FAILED);
+            response->set_error_message("verify failed");
+        }
+        return Status::OK;
+    }
     Status KeyManagerServer::Sm2SignWithSm3(ServerContext *context, const Sm2SignWithSm3Request *request,
                                             Sm2SignWithSm3Response *response) {
         std::string private_key = request->pri_key();
@@ -103,7 +116,16 @@ namespace datacloak{
     Status KeyManagerServer::IssueGmCert(ServerContext *context, const IssueGmCertRequest *request,
                                          IssueGmCertResponse *response) {
 
-        Crypto::IssueGmCert("", "");
+        std::string client_cert = Crypto::IssueGmCert(request->client_pub_pem(), request->cname());
+        if(!client_cert.empty()){
+            response->set_error_code(server::key_manager::DC_OK);
+            response->set_error_message("succeed");
+            response->set_cert_pem(client_cert);
+        }else{
+            response->set_error_code(server::key_manager::DC_KEY_MANAGER_SM3_GENERATE_CERT_ERROR);
+            response->set_error_message("Generate client cert failed");
+            response->set_cert_pem(client_cert);
+        }
 
         return Status::OK;
 

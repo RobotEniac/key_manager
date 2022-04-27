@@ -27,6 +27,7 @@ namespace datacloak{
 
     std::string Crypto::ca_cert;
     std::string Crypto::ca_private_key;
+    std::string Crypto::private_key_index;
 
     std::string Crypto::sm3_hash(const std::string &msg) {
         unsigned char hash[SM3_DIGEST_LENGTH] = {0};
@@ -226,6 +227,21 @@ namespace datacloak{
         }
     }
 
+    void Crypto::GenerateECCKey(const std::string &index, std::string tag) {
+        // generate key pair
+        char *public_key_der = nullptr;
+        char *private_key_cipher_by_lmk = nullptr;
+        int err = driverE7_GenerateSM2KeyPair((char*)index.c_str(), (char*)tag.c_str(),
+                                              reinterpret_cast<FRM_INT8_PTR *>(&public_key_der),
+                                              reinterpret_cast<FRM_INT8_PTR *>(&private_key_cipher_by_lmk));
+        if(err){
+            LOG(ERROR) << "driverE7_GenerateSM2KeyPair failed";
+            return;
+        }
+        LOG(INFO) << "driverE7_GenerateSM2KeyPair succeed";
+        printf("public_key_der: \n%s\n", public_key_der);
+        printf("private_key_cipher_by_lmk: \n%s\n", private_key_cipher_by_lmk);
+    }
     void Crypto::GenerateECCKey() {
         EC_KEY *key = nullptr;
         BIO *bio = nullptr;
@@ -300,7 +316,26 @@ namespace datacloak{
 
     }
 
+    bool Crypto::SM2_verify_with_sm3(const std::string &index, const std::string &sign, const std::string &msg) {
+        std::string hash = sm3_hash(msg);
+        int err = driverEF_SM2PublicKeyVerifyWithDataDigest(
+                "0",
+                (char*)sign.c_str(),
+                (char*)hash.c_str(),
+                (char*)private_key_index.c_str()
+        );
+        if(err != 0){
+            LOG(ERROR) << "driverEF_SM2PublicKeyVerifyWithDataDigest failed, errno[" << err << "]";
+            LOG(INFO) << "key_index[" << index <<"],sign["<<sign <<"],msg[" << msg <<"]";
+            return false;
+        }
+        LOG(INFO) << "driverEF_SM2PublicKeyVerifyWithDataDigest succeed";
+        return true;
+    }
+
     std::string Crypto::SM2_sign_with_sm3(const std::string &data) {
+        int err = 0;
+#if 0
         char *index = "55";
         char *tag = "ymx-55";
         char *public_key_der = nullptr;
@@ -316,7 +351,7 @@ namespace datacloak{
         LOG(INFO) << "driverE7_GenerateSM2KeyPair succeed";
         printf("public_key_der: \n%s\n", public_key_der);
         printf("private_key_cipher_by_lmk: \n%s\n", private_key_cipher_by_lmk);
-
+#endif
         // get public key
         //driverE2_GetSM2PublicKey()
 
@@ -349,9 +384,9 @@ namespace datacloak{
         }
         LOG(INFO) << "driverE5_SM2PrivateKeySign succeed";
 #endif
-		driverED_SM2PrivateKeySignWithDataDigest(
+		err = driverED_SM2PrivateKeySignWithDataDigest(
 					(char*)hash.c_str(),
-					index,
+                    (char*)private_key_index.c_str(),
 					"0",
 					&signature
 				);
@@ -366,7 +401,7 @@ namespace datacloak{
 				"0",
 				signature,
 				(char*)hash.c_str(),
-				index
+				(char*)private_key_index.c_str()
 				);
 		if(err != 0){
 			LOG(ERROR) << "driverEF_SM2PublicKeyVerifyWithDataDigest failed, errno[" << err << "]";
@@ -382,6 +417,9 @@ namespace datacloak{
         ca_private_key = root_private_key;
     }
 
+    void Crypto::SetKeyIndex(std::string &index) {
+        private_key_index = index;
+    }
     std::string Crypto::IssueGmCert(const std::string &pub, const std::string &name) {
         X509 *x509 = nullptr;
         EVP_PKEY *pk = nullptr;
