@@ -1,0 +1,10 @@
+prefix=/home/edward/wall/thirdparty/glog-0.5.0
+exec_prefix=/home/edward/wall/thirdparty/glog-0.5.0/bin
+libdir=/home/edward/wall/thirdparty/glog-0.5.0/lib64
+includedir=/home/edward/wall/thirdparty/glog-0.5.0/include
+
+Name: libglog
+Description: Google Log (glog) C++ logging framework
+Version: 0.5.0
+Libs: -L${libdir} -lglog
+Cflags: -I${includedir}

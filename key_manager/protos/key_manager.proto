@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package datacloak.server.key_manager;
+
+service KeyManager {
+  // hash sm3
+  rpc Hash(stream HashRequest) returns (HashResponse) {}
+  // sm2 encrypt
+  rpc AsymEncrypt(AsymEncryptRequest) returns (AsymEncryptResponse) {}
+  rpc AsymDecrypt(AsymDecryptRequest) returns (AsymDecryptResponse) {}
+  rpc Sign(SignRequest) returns (SignResponse) {}
+  rpc Sm2SignWithSm3(Sm2SignWithSm3Request) returns (Sm2SignWithSm3Response) {}
+  rpc IssueGmCert(IssueGmCertRequest) returns (IssueGmCertResponse) {}
+  // below is low priority
+  // random
+  rpc RandomUint64(RandomUint64Request) returns (RandomUint64Response) {}
+  // symmetric algorithm
+  rpc SymEncrypt(SymEncryptRequest) returns (SymEncryptResponse) {}
+  rpc SymDecrypt(SymDecryptRequest) returns (SymDecryptResponse) {}
+}
+
+message AsymDecryptRequest{
+
+}
+message AsymDecryptResponse{}
+
+message RandomUint64Request{}
+message RandomUint64Response{}
+
+message SymEncryptRequest{}
+message SymEncryptResponse{}
+
+message SymDecryptRequest{}
+message SymDecryptResponse{}
+
+enum CryptoAlgType {
+  SM_UNKNOWN = 0;
+  SM2 = 1;
+  SM3 = 2;
+  SM4 = 3;
+}
+
+message HashRequest {
+  CryptoAlgType type = 1;
+  bytes msg = 2;
+}
+
+message HashResponse {
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+  bytes msg = 3;
+}
+
+message AsymEncryptRequest {
+  CryptoAlgType type = 1;
+  bytes msg = 2;
+  string pub_key = 3;
+}
+
+message AsymEncryptResponse {
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+  bytes msg = 3;
+}
+
+message SignRequest {
+  CryptoAlgType type = 1;
+  bytes msg = 2;
+  string pri_key = 3; // if type == SM2, pri_key is key index
+}
+
+message SignResponse {
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+  bytes msg = 3;
+}
+
+message Sm2SignWithSm3Request {
+  bytes msg = 1;
+  string pri_key = 2;// use sm2, pri_key is key index
+}
+
+message Sm2SignWithSm3Response {
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+  bytes msg = 3;
+}
+
+message IssueGmCertRequest {
+  string cname = 1;
+  string client_pub_pem = 2;
+  // other parames just use default
+}
+
+message IssueGmCertResponse {
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+  string cert_pem = 3;
+}
+
+enum DataCloakErrorCode{
+  DC_OK = 0;
+
+  //kms server
+  DC_KEY_MANAGER_SM3_HASH_FAILED = 20000001;
+  DC_KEY_MANAGER_SM3_HASH_UNKNOWN_TYPE = 20000002;
+}

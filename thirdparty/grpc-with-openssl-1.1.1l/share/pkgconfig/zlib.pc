@@ -1,0 +1,13 @@
+prefix=/home/edward/wall/thirdparty/grpc
+exec_prefix=/home/edward/wall/thirdparty/grpc
+libdir=/home/edward/wall/thirdparty/grpc/lib
+sharedlibdir=/home/edward/wall/thirdparty/grpc/lib
+includedir=/home/edward/wall/thirdparty/grpc/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.11
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}
