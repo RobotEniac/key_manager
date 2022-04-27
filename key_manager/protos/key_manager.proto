@@ -10,6 +10,7 @@ service KeyManager {
   rpc AsymDecrypt(AsymDecryptRequest) returns (AsymDecryptResponse) {}
   rpc Sign(SignRequest) returns (SignResponse) {}
   rpc Sm2SignWithSm3(Sm2SignWithSm3Request) returns (Sm2SignWithSm3Response) {}
+  rpc Sm2VerifyWithSm3(Sm2VerifyWithSm3Request) returns (Sm2VerifyWithSm3Response) {}
   rpc IssueGmCert(IssueGmCertRequest) returns (IssueGmCertResponse) {}
   // below is low priority
   // random
@@ -91,6 +92,17 @@ message Sm2SignWithSm3Response {
   DataCloakErrorCode error_code = 1;
   string error_message = 2;
   bytes msg = 3;
+}
+
+message Sm2VerifyWithSm3Request {
+  bytes msg = 1;
+  bytes sig = 2;
+  string pri_key = 3;// use sm2, pri_key is key index
+}
+
+message Sm2VerifyWithSm3Response {
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
 }
 
 message IssueGmCertRequest {
