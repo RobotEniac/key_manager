@@ -30,7 +30,6 @@ message AsymDecryptResponse{
   string error_message = 2;
   bytes msg = 3;
 }
-message AsymDecryptResponse{}
 
 message RandomUint64Request{}
 message RandomUint64Response{}

@@ -15,6 +15,8 @@ using datacloak::server::key_manager::HashResponse;
 
 using datacloak::server::key_manager::AsymEncryptRequest;
 using datacloak::server::key_manager::AsymEncryptResponse;
+using datacloak::server::key_manager::AsymDecryptRequest;
+using datacloak::server::key_manager::AsymDecryptResponse;
 
 //Sm2SignWithSm3
 
@@ -34,6 +36,8 @@ class KeyManagerServer final : public datacloak::server::key_manager::KeyManager
         Status Hash(ServerContext* context, grpc::ServerReader<HashRequest>* reader, HashResponse* response)override;
         Status AsymEncrypt(ServerContext* context, const AsymEncryptRequest* request,
                            AsymEncryptResponse* response)override;
+        Status AsymDecrypt(ServerContext *context, const AsymDecryptRequest *request,
+                           AsymDecryptResponse *response)override;
         Status Sm2SignWithSm3(ServerContext* context, const Sm2SignWithSm3Request* request, Sm2SignWithSm3Response* response)override;
 
         Status IssueGmCert(ServerContext* context, const IssueGmCertRequest* request, IssueGmCertResponse* response)override;
