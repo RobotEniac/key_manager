@@ -78,11 +78,6 @@ namespace datacloak{
         return Status::OK;
     }
 
-    Status KeyManagerServer::AsymEncrypt(ServerContext *context, const AsymEncryptRequest *request,
-                                         AsymEncryptResponse *response) {
-        return Status::OK;
-    }
-
     Status KeyManagerServer::Sm2SignWithSm3(ServerContext *context, const Sm2SignWithSm3Request *request,
                                             Sm2SignWithSm3Response *response) {
         std::string private_key = request->pri_key();
@@ -114,6 +109,64 @@ namespace datacloak{
 
     }
 
+    Status KeyManagerServer::AsymEncrypt(ServerContext *context, const AsymEncryptRequest *request,
+                                            AsymEncryptResponse *response) {
+        std::string pub_key = request->pub_key();
+        std::string msg = request->msg();
+        datacloak::server::key_manager::CryptoAlgType type = request->type();
+        std::cout << "pub_key:" << pub_key << std::endl;
+        std::cout << "msg:" << msg << std::endl;
+        std::string cipher;
+        switch (type)
+        {
+        case datacloak::server::key_manager::CryptoAlgType::SM2:
+            cipher = Crypto::SM2_Encrypt(msg, pub_key);
+            if (cipher == "") {
+                response->set_error_code(server::key_manager::DC_CRYPTO_FAILED);
+            }
+            else {
+                response->set_error_code(server::key_manager::DC_OK);
+                response->set_msg(cipher);
+            }
+            break;
+        
+        default:
+            response->set_error_code(server::key_manager::DC_CRYPTO_ALG_INVALID);
+            break;
+        }
+
+        return Status::OK;
+    }
+
+
+    Status KeyManagerServer::AsymDecrypt(ServerContext *context, const AsymDecryptRequest *request,
+                                            AsymDecryptResponse *response) {
+        std::string pri_key = request->pri_key();
+        std::string msg = request->msg();
+        datacloak::server::key_manager::CryptoAlgType type = request->type();
+        std::cout << "pri_key:" << pri_key << std::endl;
+        std::cout << "msg:" << msg << std::endl;
+        std::string text;
+        switch (type)
+        {
+        case datacloak::server::key_manager::CryptoAlgType::SM2:
+            text = Crypto::SM2_Decrypt(msg, pri_key);
+            if (text == "") {
+                response->set_error_code(server::key_manager::DC_CRYPTO_FAILED);
+            }
+            else {
+                response->set_error_code(server::key_manager::DC_OK);
+                response->set_msg(text);
+            }
+            break;
+        
+        default:
+            response->set_error_code(server::key_manager::DC_CRYPTO_ALG_INVALID);
+            break;
+        }
+
+        return Status::OK;
+    }
 }
 
 

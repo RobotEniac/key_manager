@@ -376,6 +376,7 @@ namespace datacloak{
         return std::string{signature};
     }
 
+
     void Crypto::SetRootKeys(const std::string& root_cert, const std::string& root_private_key) {
         ca_cert = root_cert;
         ca_private_key = root_private_key;
@@ -525,5 +526,53 @@ namespace datacloak{
         X509_add_ext(crt, ex, -1);
         X509_EXTENSION_free(ex);
         return 1;
+    }
+    std::string Crypto::SM2_Encrypt(const std::string& msg, const std::string& pub_key_idx) {
+        char *cipher = NULL;
+        size_t msg_len = msg.length();
+        size_t key_len = pub_key_idx.length();
+        char msg_cstr[msg_len];
+        memset(msg_cstr, 0, msg_len);
+        char key_cstr[key_len];
+        memset(key_cstr, 0, key_len);
+        memcpy(msg_cstr, msg.c_str(), msg_len);
+        memcpy(key_cstr, pub_key_idx.c_str(), key_len);
+
+        int result = driverE3_SM2PublicKeyEncrypt(msg_cstr, key_cstr, &cipher);
+        if (0 != result) {
+            LOG(ERROR) << "driverE3_SM2PublicKeyEncrypt failed, errno[" << result << "]";
+            return "";
+        }
+        else {
+            std::string ret_s(cipher);
+            driver_Free(&cipher);
+            return ret_s;
+        }
+    }
+
+    std::string Crypto::SM2_Decrypt(const std::string& msg, const std::string& pri_key_idx) {
+        char *text = NULL;
+
+        size_t msg_len = msg.length();
+        char msg_cstr[msg_len];
+        memset(msg_cstr, 0, msg_len);
+        memcpy(msg_cstr, msg.c_str(), msg_len);
+
+        size_t key_len = pri_key_idx.length();
+        char key_cstr[key_len];
+        memset(key_cstr, 0, key_len);
+        memcpy(key_cstr, pri_key_idx.c_str(), key_len);
+
+        int result = driverE4_SM2PrivateKeyDecrypt(msg_cstr, key_cstr, &text);
+        if (0 != result) {
+            LOG(ERROR) << "driverE3_SM2PrivateKeyDecrypt failed, errno[" << result << "]";
+            return "";
+        }
+        else {
+            std::string ret_s(text);
+            driver_Free(&text);
+            return ret_s;
+        }
+
     }
 }

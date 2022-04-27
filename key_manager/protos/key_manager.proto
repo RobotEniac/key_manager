@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package datacloak.server.key_manager;
@@ -10,6 +11,7 @@ service KeyManager {
   rpc AsymDecrypt(AsymDecryptRequest) returns (AsymDecryptResponse) {}
   rpc Sign(SignRequest) returns (SignResponse) {}
   rpc Sm2SignWithSm3(Sm2SignWithSm3Request) returns (Sm2SignWithSm3Response) {}
+  rpc Sm2VerifyWithSm3(Sm2VerifyWithSm3Request) returns (Sm2VerifyWithSm3Response) {}
   rpc IssueGmCert(IssueGmCertRequest) returns (IssueGmCertResponse) {}
   // below is low priority
   // random
@@ -29,7 +31,6 @@ message AsymDecryptResponse{
   string error_message = 2;
   bytes msg = 3;
 }
-
 
 message RandomUint64Request{}
 message RandomUint64Response{}
@@ -93,6 +94,17 @@ message Sm2SignWithSm3Response {
   bytes msg = 3;
 }
 
+message Sm2VerifyWithSm3Request {
+  bytes msg = 1;
+  bytes sig = 2;
+  string pri_key = 3;// use sm2, pri_key is key index
+}
+
+message Sm2VerifyWithSm3Response {
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+}
+
 message IssueGmCertRequest {
   string cname = 1;
   string client_pub_pem = 2;
@@ -116,3 +128,4 @@ enum DataCloakErrorCode{
   DC_CRYPTO_ALG_INVALID = 30000001;
   DC_CRYPTO_FAILED = 30000002;
 }
+
