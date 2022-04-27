@@ -18,6 +18,8 @@ namespace datacloak{
         static void GenerateECCKey();
         static std::string ECDSA_SIG_to_string(const void *sig);
         static std::string SM2_sign_with_sm3(const std::string &data);
+        static std::string SM2_Encrypt(const std::string& msg, const std::string& pub_key_idx);
+        static std::string SM2_Decrypt(const std::string& msg, const std::string& pri_key_idx);
 
     private:
         static std::map<std::string, std::string> key_map_;
