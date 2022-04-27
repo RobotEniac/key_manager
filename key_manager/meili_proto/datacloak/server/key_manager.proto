@@ -1,6 +1,8 @@
 syntax = "proto3";
 
-package datacloak.server.key_manager;
+package datacloak.server;
+
+option go_package = "gitlab.oa.com/meili_proto/datacloak/server";
 
 service KeyManager {
   // hash sm3
