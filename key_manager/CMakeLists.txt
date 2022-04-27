@@ -7,7 +7,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-g")
-
+set(SSL_TYPE "tassl")
 #add_definitions(-D__cplusplus)
 
 set(SSL_TYPE "openssl" CACHE STRING "ssl type (tassl/openssl)")
@@ -76,7 +76,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/crypto)
 include_directories(${thirdparty}/libTassAPI4EHVSM/include)
 
 link_directories(${thirdparty}/libTassAPI4EHVSM/lib)
-
+link_directories(${thirdparty}/tassl/lib)
 add_executable(key_manager
         ${key_manager_proto_srcs}
         ${key_manager_grpc_srcs}
