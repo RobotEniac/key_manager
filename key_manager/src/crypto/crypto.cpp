@@ -333,7 +333,7 @@ namespace datacloak{
         return true;
     }
 
-    std::string Crypto::SM2_sign_with_sm3(const std::string &data, std::string &key_index) {
+    std::string Crypto::SM2_sign_with_sm3(const std::string &data,const std::string &key_index) {
         int err = 0;
 #if 0
         char *index = "55";

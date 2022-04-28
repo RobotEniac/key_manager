@@ -112,7 +112,7 @@ namespace datacloak{
         }
 
         //std::string sign = Crypto::SM2_sign(request->pri_key().c_str(), request->msg());
-        std::string sign = Crypto::SM2_sign_with_sm3(request->msg());
+        std::string sign = Crypto::SM2_sign_with_sm3(request->msg(), request->pri_key());
         response->set_error_code(server::DC_OK);
         response->set_msg(sign);
         LOG(INFO) << __FUNCTION__ << "exit";
