@@ -122,6 +122,7 @@ namespace datacloak{
                 response->set_error_code(server::key_manager::DC_CRYPTO_FAILED);
             }
             else {
+                std::cout << "cipher: " << cipher << std::endl;
                 response->set_error_code(server::key_manager::DC_OK);
                 response->set_msg(cipher);
             }

@@ -3,6 +3,7 @@
 //
 
 #include <crypto.h>
+#include <../utils.h>
 #include <log.h>
 #include <openssl/sm3.h>
 #include <openssl/sm2.h>
@@ -17,6 +18,7 @@
 #include <openssl/ssl.h>
 #include <TassAPI4EHVSM.h>
 #include <iostream>
+#include <sstream>
 //
 namespace datacloak{
 
@@ -372,16 +374,28 @@ namespace datacloak{
 
     std::string Crypto::SM2_Encrypt(const std::string& msg, const std::string& pub_key_idx) {
         char *cipher = NULL;
-        size_t msg_len = msg.length();
+
+        char *data_hex = (char*)malloc(msg.length() * 2 + 1);
+        if(!data_hex){
+            LOG(ERROR) << "malloc error, msg:[" << strerror(errno) << "]";
+            return "";
+        }
+        memset(data_hex, 0, msg.length() * 2 + 1);
+        for(int i = 0; i < msg.length(); i++){
+            sprintf(data_hex + (i * 2), "%02X", (uint8_t)msg.c_str()[i]);
+        }
+        /*for (int idx = 0; idx < msg.length() * 2 + 1; ++idx) {
+            std::cout << data_hex[idx];
+        }
+        std::cout << std::endl;*/
+
         size_t key_len = pub_key_idx.length();
-        char msg_cstr[msg_len];
-        memset(msg_cstr, 0, msg_len);
-        char key_cstr[key_len];
-        memset(key_cstr, 0, key_len);
-        memcpy(msg_cstr, msg.c_str(), msg_len);
+        char key_cstr[key_len + 1];
+        memset(key_cstr, 0, key_len + 1);
         memcpy(key_cstr, pub_key_idx.c_str(), key_len);
 
-        int result = driverE3_SM2PublicKeyEncrypt(msg_cstr, key_cstr, &cipher);
+        int result = driverE3_SM2PublicKeyEncrypt(data_hex, key_cstr, &cipher);
+        free(data_hex);
         if (0 != result) {
             LOG(ERROR) << "driverE3_SM2PublicKeyEncrypt failed, errno[" << result << "]";
             return "";
@@ -397,13 +411,13 @@ namespace datacloak{
         char *text = NULL;
 
         size_t msg_len = msg.length();
-        char msg_cstr[msg_len];
-        memset(msg_cstr, 0, msg_len);
+        char msg_cstr[msg_len + 1];
+        memset(msg_cstr, 0, msg_len + 1);
         memcpy(msg_cstr, msg.c_str(), msg_len);
 
         size_t key_len = pri_key_idx.length();
-        char key_cstr[key_len];
-        memset(key_cstr, 0, key_len);
+        char key_cstr[key_len + 1];
+        memset(key_cstr, 0, key_len + 1);
         memcpy(key_cstr, pri_key_idx.c_str(), key_len);
 
         int result = driverE4_SM2PrivateKeyDecrypt(msg_cstr, key_cstr, &text);
