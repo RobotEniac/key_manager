@@ -1,0 +1,2 @@
+protoc --go_opt=paths=source_relative --go_out=../ --proto_path=../ meili_proto/datacloak/server/key_manager.proto -I ../meili_proto
+protoc --go-grpc_opt=paths=source_relative --go-grpc_out=../ --proto_path=../ meili_proto/datacloak/server/key_manager.proto -I ../meili_proto
