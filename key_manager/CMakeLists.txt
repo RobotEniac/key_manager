@@ -75,7 +75,7 @@ include_directories(${thirdparty}/tassl/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/crypto)
 include_directories(${thirdparty}/libTassAPI4EHVSM/include)
 
-link_directories(${thirdparty}/libTassAPI4EHVSM/lib)
+link_directories(/root/tassl/lib)
 link_directories(${thirdparty}/tassl/lib)
 add_executable(key_manager
         ${key_manager_proto_srcs}

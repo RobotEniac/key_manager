@@ -54,10 +54,11 @@ namespace datacloak{
 
     Status
     KeyManagerServer::Hash(ServerContext *context, grpc::ServerReader<HashRequest> *reader, HashResponse *response) {
+        LOG(INFO) << __FUNCTION__ ;
         HashRequest request;
+        std::string digest = "";
         while (reader->Read(&request)){
             datacloak::server::CryptoAlgType type = request.type();
-            std::string digest = "";
             switch (type) {
                 case server::SM3:
                     digest = Crypto::sm3_hash(request.msg());
@@ -72,14 +73,31 @@ namespace datacloak{
                 default:
                     response->set_error_code(server::DC_KEY_MANAGER_SM3_HASH_UNKNOWN_TYPE);
                     response->set_error_message("Unknown hash type");
+                    break;
             }
-            response->set_msg(digest);
         }
+        response->set_msg(digest);
+        LOG(INFO) << __FUNCTION__ << "exit";
         return Status::OK;
     }
 
+    Status KeyManagerServer::Sm2VerifyWithSm3(ServerContext *context, const Sm2VerifyWithSm3Request *request,
+                                              Sm2VerifyWithSm3Response *response) {
+        LOG(INFO) << __FUNCTION__ ;
+        bool ret = Crypto::SM2_verify_with_sm3(request->pri_key(), request->sig(), request->msg());
+        if(ret){
+            response->set_error_code(server::DC_OK);
+            response->set_error_message("success");
+        }else{
+            response->set_error_code(server::DC_KEY_MANAGER_SM3_VERIFY_MSG_SIGN_FAILED);
+            response->set_error_message("verify failed");
+        }
+        LOG(INFO) << __FUNCTION__ << "exit";
+        return Status::OK;
+    }
     Status KeyManagerServer::Sm2SignWithSm3(ServerContext *context, const Sm2SignWithSm3Request *request,
                                             Sm2SignWithSm3Response *response) {
+        LOG(INFO) << __FUNCTION__ ;
         std::string private_key = request->pri_key();
         std::string msg = request->msg();
         std::cout << "private_key:\n" << private_key << std::endl;
@@ -97,14 +115,25 @@ namespace datacloak{
         std::string sign = Crypto::SM2_sign_with_sm3(request->msg());
         response->set_error_code(server::DC_OK);
         response->set_msg(sign);
+        LOG(INFO) << __FUNCTION__ << "exit";
         return Status::OK;
     }
 
     Status KeyManagerServer::IssueGmCert(ServerContext *context, const IssueGmCertRequest *request,
                                          IssueGmCertResponse *response) {
-
-        Crypto::IssueGmCert("", "");
-
+        LOG(INFO) << __FUNCTION__ ;
+        LOG(INFO) << "\n" << "client pub key:\n" << request->client_pub_pem() << "\ncname[" << request->cname() <<"]";
+        std::string client_cert = Crypto::IssueGmCert(request->client_pub_pem(), request->cname());
+        if(!client_cert.empty()){
+            response->set_error_code(server::DC_OK);
+            response->set_error_message("succeed");
+            response->set_cert_pem(client_cert);
+        }else{
+            response->set_error_code(server::DC_KEY_MANAGER_SM3_GENERATE_CERT_ERROR);
+            response->set_error_message("Generate client cert failed");
+            response->set_cert_pem(client_cert);
+        }
+        LOG(INFO) << __FUNCTION__ << "exit";
         return Status::OK;
 
     }
