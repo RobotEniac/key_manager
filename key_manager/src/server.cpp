@@ -143,8 +143,8 @@ namespace datacloak{
         std::string pub_key = request->pub_key();
         std::string msg = request->msg();
         datacloak::server::CryptoAlgType type = request->type();
-        std::cout << "pub_key:" << pub_key << std::endl;
-        std::cout << "msg:" << msg << std::endl;
+        LOG(INFO) << "pub_key:" << pub_key;
+        LOG(INFO) << "msg:" << msg;
         std::string cipher;
         switch (type)
         {
@@ -173,8 +173,8 @@ namespace datacloak{
         std::string pri_key = request->pri_key();
         std::string msg = request->msg();
         datacloak::server::CryptoAlgType type = request->type();
-        std::cout << "pri_key:" << pri_key << std::endl;
-        std::cout << "msg:" << msg << std::endl;
+        LOG(INFO) << "pri_key:" << pri_key;
+        LOG(INFO) << "msg:" << msg;
         std::string text;
         switch (type)
         {
@@ -193,7 +193,6 @@ namespace datacloak{
             response->set_error_code(server::DC_CRYPTO_ALG_INVALID);
             break;
         }
-
         return Status::OK;
     }
 }
