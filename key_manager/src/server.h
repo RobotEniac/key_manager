@@ -23,8 +23,8 @@ using datacloak::server::AsymDecryptResponse;
 using datacloak::server::Sm2SignWithSm3Request;
 using datacloak::server::Sm2SignWithSm3Response;
 
-using datacloak::server::key_manager::Sm2VerifyWithSm3Request;
-using datacloak::server::key_manager::Sm2VerifyWithSm3Response;
+using datacloak::server::Sm2VerifyWithSm3Request;
+using datacloak::server::Sm2VerifyWithSm3Response;
 
 //issue cert
 using datacloak::server::IssueGmCertRequest;

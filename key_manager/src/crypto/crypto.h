@@ -18,7 +18,7 @@ namespace datacloak{
         static void GenerateECCKey();
         static void GenerateECCKey(const std::string &index, std::string tag = "datacloak_test");
         static std::string ECDSA_SIG_to_string(const void *sig);
-        static std::string SM2_sign_with_sm3(const std::string &data);
+        static std::string SM2_sign_with_sm3(const std::string &data, std::string &key_index);
         static bool SM2_verify_with_sm3(const std::string& index, const std::string &sign,const std::string& msg);
 
         static std::string IssueGmCert(const std::string& pub, const std::string& name);
