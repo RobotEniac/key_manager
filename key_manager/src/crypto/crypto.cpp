@@ -3,6 +3,7 @@
 //
 
 #include <crypto.h>
+#include <../utils.h>
 #include <log.h>
 #include <openssl/sm3.h>
 #include <openssl/sm2.h>
@@ -706,10 +707,10 @@ namespace datacloak{
         for(int i = 0; i < msg.length(); i++){
             sprintf(data_hex + (i * 2), "%02X", (uint8_t)msg.c_str()[i]);
         }
-        /*for (int idx = 0; idx < msg.length() * 2 + 1; ++idx) {
+        for (int idx = 0; idx < msg.length() * 2 + 1; ++idx) {
             std::cout << data_hex[idx];
         }
-        std::cout << std::endl;*/
+        std::cout << std::endl;
 
         size_t key_len = pub_key_idx.length();
         char key_cstr[key_len + 1];
@@ -748,7 +749,16 @@ namespace datacloak{
             return "";
         }
         else {
-            std::string ret_s(text);
+            char *data = (char*)malloc(strlen(text) + 1);
+            memset(data, 0, strlen(text) + 1);
+            if(!data){
+                LOG(ERROR) << "malloc error, msg:[" << strerror(errno) << "]";
+                return "";
+            }
+
+            datacloak::Utils::b2s(text, data);
+            std::string ret_s(data);
+            free(data);
             driver_Free(&text);
             return ret_s;
         }
