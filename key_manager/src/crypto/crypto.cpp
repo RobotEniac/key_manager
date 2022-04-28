@@ -401,7 +401,7 @@ namespace datacloak{
 				"0",
 				signature,
 				(char*)hash.c_str(),
-				(char*)private_key_index.c_str()
+				(char*)key_index.c_str()
 				);
 		if(err != 0){
 			LOG(ERROR) << "driverEF_SM2PublicKeyVerifyWithDataDigest failed, errno[" << err << "]";
