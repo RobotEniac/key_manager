@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.16)
 project(crypto_manager)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -7,7 +7,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-g")
-
+set(SSL_TYPE "tassl")
 #add_definitions(-D__cplusplus)
 
 set(SSL_TYPE "openssl" CACHE STRING "ssl type (tassl/openssl)")
@@ -48,7 +48,7 @@ set(_PROTOBUF_PROTOC protobuf::protoc)
 set(_GRPC_GRPCPP gRPC::grpc++)
 set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 
-get_filename_component(key_manager_proto "protos/key_manager.proto" ABSOLUTE)
+get_filename_component(key_manager_proto "meili_proto/datacloak/server/key_manager.proto" ABSOLUTE)
 get_filename_component(key_manager_proto_path "${key_manager_proto}" PATH)
 
 set(key_manager_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/key_manager.pb.cc")
@@ -75,8 +75,8 @@ include_directories(${thirdparty}/tassl/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/crypto)
 include_directories(${thirdparty}/libTassAPI4EHVSM/include)
 
-link_directories(${thirdparty}/libTassAPI4EHVSM/lib)
-
+link_directories(/root/tassl/lib)
+link_directories(${thirdparty}/tassl/lib)
 add_executable(key_manager
         ${key_manager_proto_srcs}
         ${key_manager_grpc_srcs}
