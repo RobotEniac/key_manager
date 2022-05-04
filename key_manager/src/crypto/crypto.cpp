@@ -22,6 +22,10 @@
 #include <TassAPI4EHVSM.h>
 #include <iostream>
 //
+
+#define BREAK_ERRNO(err,func) do{if((err)!= 1)  {ERR_print_errors_fp(stderr);LOG(ERROR) << func << " error"; err = -1;break;}else{LOG(INFO) << func << " succeed";}}while(false)
+#define BREAK_NULL(x,msg) do{if((!x)) {ERR_print_errors_fp(stderr);LOG(ERROR) << msg; err = -1;break;}else{LOG(INFO) << msg << " succeed";}}while(false)
+
 namespace datacloak{
 
     std::map<std::string, std::string> Crypto::key_map_;
@@ -763,5 +767,246 @@ namespace datacloak{
             return ret_s;
         }
 
+    }
+
+    int Crypto::GenerateKeypair(int nid ,char *key_index, char *engin_name) {
+        int err = 0;
+        ENGINE *engine = nullptr;
+        EVP_PKEY *pkey = nullptr;
+        EVP_PKEY_CTX *pkey_ctx = nullptr;
+        bool engin_init_flag = false;
+        do{
+            if(!engin_name){
+                LOG(ERROR) << "please set a correct engine name";
+                err = -1;
+                break;
+            }
+            if(!key_index){
+                LOG(ERROR) << "Should set key_index to a correct value";
+                err = -1;
+                break;
+            }
+            engine = ENGINE_by_id(engin_name);
+            if(!engine){
+                LOG(ERROR) << "ENGINE_by_id error,";
+                ERR_print_errors_fp(stderr);
+                err = -1;
+                break;
+            }
+            err = ENGINE_init(engine);
+            if(err != 1){
+                LOG(ERROR) << "ENGINE_init error";
+                ERR_print_errors_fp(stderr);
+                err = -1;
+                break;
+            }
+            engin_init_flag = true;
+            err = EVP_PKEY_CTX_ctrl(pkey_ctx, -1,
+                                    EVP_PKEY_OP_PARAMGEN | EVP_PKEY_OP_KEYGEN,
+                                    EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID,
+                                    NID_sm2, nullptr);
+            if(err != 1){
+                LOG(ERROR) << "EVP_PKEY_CTX_ctrl error";
+                ERR_print_errors_fp(stderr);
+                err = -1;
+                break;
+            }
+
+            err = EVP_PKEY_CTX_ctrl(pkey_ctx, -1,
+                              EVP_PKEY_OP_PARAMGEN|EVP_PKEY_OP_KEYGEN,
+                              EVP_PKEY_CTRL_EC_PARAM_ENC,
+                              OPENSSL_EC_NAMED_CURVE, nullptr);
+            if(err != 1){
+                LOG(ERROR) << "EVP_PKEY_CTX_ctrl error";
+                ERR_print_errors_fp(stderr);
+                err = -1;
+                break;
+            }
+            EVP_PKEY_CTX_set_app_data(pkey_ctx, (void *) key_index);
+
+            err = EVP_PKEY_keygen(pkey_ctx, &pkey);
+
+            if(err != 1){
+                LOG(ERROR) << "EVP_PKEY_keygen error";
+                ERR_print_errors_fp(stderr);
+                err = -1;
+                break;
+            }else{
+                err = 0;
+            }
+        } while (false);
+        if(engine){
+            if(engin_init_flag){
+                ENGINE_finish(engine);
+            }
+            ENGINE_free(engine);
+        }
+        return err;
+    }
+
+    void Crypto::TestCA() {
+        int err = GenerateKeypair(NID_sm2,
+                        CA_KEY,
+                        ENGINE_NAME);
+        if(err != 0){
+            return;
+        }
+        X509_REQ *req = nullptr;
+        err = GenerateCSR(CA_KEY, NID_sm3, ENGINE_NAME, "DATACLOAK", (void**)&req);
+        if(err != 0){
+            return;
+        }
+
+
+    }
+
+    void Crypto::GlobalInit() {
+        ENGINE_load_builtin_engines();
+    }
+
+    int Crypto::GenerateCSR(char *key_index, int hash_id, char *engine_name, const char *cname, void** ppreq) {
+        int err = 0;
+        EVP_PKEY *pkey = nullptr;
+        X509_NAME* x509_name = nullptr;
+        ENGINE* engine = nullptr;
+        X509_REQ** req = (X509_REQ**)ppreq;
+        bool engin_init_flag = false;
+        do {
+            if (!engin_name) {
+                LOG(ERROR) << "please set a correct engine name";
+                err = -1;
+                break;
+            }
+            if (!key_index) {
+                LOG(ERROR) << "Should set key_index to a correct value";
+                err = -1;
+                break;
+            }
+
+            engine = ENGINE_by_id(engin_name);
+            BREAK_ERRNO(err, "ENGINE_by_id" );
+            err = ENGINE_init(engine);
+            BREAK_ERRNO(err, "ENGINE_init");
+            engin_init_flag = true;
+            *req = X509_REQ_new();
+            BREAK_NULL(*req, "X509_REQ_new");
+            err = X509_REQ_set_version(*req, 0L);
+            BREAK_ERRNO(err, "X509_REQ_set_version");
+
+            x509_name = X509_NAME_new();
+            BREAK_NULL(x509_name, "X509_NAME_new");
+            X509_NAME_add_entry_by_txt(x509_name, "C", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("CN"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "ST", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("Guangdong"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "L", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("Shenzhen"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "O", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("DataCloak"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "OU", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("AUTH"), -1, -1, 0);
+            X509_NAME_add_entry_by_txt(x509_name, "CN", MBSTRING_ASC, reinterpret_cast<const unsigned char *>(cname), -1, -1, 0);
+
+            err = X509_REQ_set_subject_name(*req, x509_name);
+            BREAK_ERRNO(err, "X509_REQ_set_subject_name");
+
+            pkey = ENGINE_load_private_key(engine, key_index, nullptr, nullptr);
+            BREAK_NULL(pkey, "ENGINE_load_private_key");
+
+            err = X509_REQ_set_pubkey(*req, pkey);
+            BREAK_NULL(pkey, "X509_REQ_set_pubkey");
+
+            err = X509_REQ_sign(*req, pkey, EVP_get_digestbynid(hash_id));
+            if( err <= 0){
+                ERR_print_errors_fp(stderr);
+                LOG(ERROR) << "X509_REQ_sign error";
+                err = -1;
+                break;
+            }
+            err = 0;
+        } while (false);
+
+        if(x509_name){
+            X509_NAME_free(x509_name);
+        }
+        if(pkey){
+            EVP_PKEY_free(pkey);
+        }
+        if(engine){
+            if(engin_init_flag){
+                ENGINE_finish(engine);
+            }
+            ENGINE_free(engine);
+        }
+        return err;
+    }
+
+    int
+    Crypto::SignCrt(void *crt_req, char *key_index, char *crt_file, int hash_id, char *engine_name, int days) {
+        int err = 0;ENGINE* engine = nullptr;
+        X509_REQ* req = (X509_REQ*)crt_req;
+        bool engin_init_flag = false;
+        X509 *x509 = nullptr;
+        EVP_PKEY* pkey = nullptr;
+        BIO* bio = nullptr;
+        do {
+            if (!engin_name) {
+                LOG(ERROR) << "please set a correct engine name";
+                err = -1;
+                break;
+            }
+            if (!key_index) {
+                LOG(ERROR) << "Should set key_index to a correct value";
+                err = -1;
+                break;
+            }
+
+            engine = ENGINE_by_id(engin_name);
+            BREAK_ERRNO(err, "ENGINE_by_id" );
+            err = ENGINE_init(engine);
+            BREAK_ERRNO(err, "ENGINE_init");
+            engin_init_flag = true;
+
+            x509 = X509_new();
+            BREAK_NULL(x509, "X509_new");
+
+            err = X509_set_issuer_name(x509, X509_REQ_get_subject_name(req));
+            BREAK_ERRNO(err, "X509_set_issuer_name");
+
+            err = X509_set_subject_name(x509, X509_REQ_get_subject_name(req));
+            BREAK_ERRNO(err, "X509_set_subject_name");
+            if(!X509_time_adj_ex(X509_getm_notAfter(x509), days, 0, NULL) ){
+                ERR_print_errors_fp(stderr);
+                err = -1;
+                break;
+            }
+            err = X509_set_pubkey(x509, X509_REQ_get0_pubkey(req));
+            BREAK_ERRNO(err, "X509_set_pubkey");
+
+            pkey = ENGINE_load_private_key(engine, key_index, NULL, NULL);
+            err = X509_sign(x509, pkey, EVP_get_digestbynid(hash_id));
+            if(err <= 0){
+                ERR_print_errors_fp(stderr);
+                err = -1;
+                break;
+            }
+            bio = BIO_new_file(crt_file, "w+");
+            BREAK_NULL(bio, "BIO_new_file");
+            err = PEM_write_bio_X509(bio, x509);
+            BREAK_ERRNO(err, "PEM_write_bio_X509");
+            err = 0;
+        } while (false);
+
+        if(bio){
+            BIO_free(bio);
+        }
+        if(pkey){
+            EVP_PKEY_free(pkey);
+        }
+        if(x509){
+            X509_free(x509);
+        }
+        if(engine){
+            if(engin_init_flag){
+                ENGINE_finish(engine);
+            }
+            ENGINE_free(engine);
+        }
+        return err;
     }
 }

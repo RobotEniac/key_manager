@@ -5,14 +5,17 @@
 #include <log.h>
 #include <crypto.h>
 #include <utils.h>
+
+void testCA(){
+    datacloak::Crypto::TestCA();
+}
+
 int main(int argc, char *argv[]) {
     std::string process_name = std::string{argv[0]};
     datacloak::Log::LogInit(process_name);
+    datacloak::Crypto::GlobalInit();
 
 
-    if(!datacloak::Utils::APIInit()){
-        return -1;
-    }
     cxxopts::Options options("crypto_manager", "Manage all crypto things");
 
     options.add_options()
@@ -24,6 +27,7 @@ int main(int argc, char *argv[]) {
             ("ca", "root certificate", cxxopts::value<std::string>())
             ("private", "root private key", cxxopts::value<std::string>())
             ("index", "private key index", cxxopts::value<std::string>())
+            ("test-ca", "test ca api", cxxopts::value<bool>()->default_value("false"))
             ("h,help", "Print usage")
             ;
     auto result = options.parse(argc, argv);
@@ -39,6 +43,7 @@ int main(int argc, char *argv[]) {
     std::string ca_cert_path = "";
     std::string ca_private_key_path = "";
     std::string private_key_index = "";
+    bool test_ca = false;
     bool use_tls = false;
     if(result.count("root"))
         root_cert_path = result["root"].as<std::string>();
@@ -59,6 +64,20 @@ int main(int argc, char *argv[]) {
     if(private_key_index == ""){
         private_key_index = "55";
     }
+
+    if(result.count("test-ca"))
+        test_ca = result["test-ca"].as<bool>();
+
+    if(test_ca){
+        testCA();
+        return 0;
+    }
+    if(!datacloak::Utils::APIInit()){
+        return -1;
+    }
+
+
+
     datacloak::Crypto::GenerateECCKey(private_key_index);
     datacloak::Crypto::SetKeyIndex(private_key_index);
     if(ca_cert_path == "" || ca_private_key_path == ""){
