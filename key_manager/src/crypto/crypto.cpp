@@ -236,7 +236,16 @@ namespace datacloak{
         // generate key pair
         char *public_key_der = nullptr;
         char *private_key_cipher_by_lmk = nullptr;
-        int err = driverE7_GenerateSM2KeyPair((char*)index.c_str(), (char*)tag.c_str(),
+
+        int err = driverE2_GetSM2PublicKey((char*)index.c_str(), &public_key_der);
+        if(err == 0){
+            LOG(INFO) << "driverE2_GetSM2PublicKey succeed";
+            return;
+        }else{
+            LOG(ERROR) <<  "driverE2_GetSM2PublicKey failed";
+        }
+
+        err = driverE7_GenerateSM2KeyPair((char*)index.c_str(), (char*)tag.c_str(),
                                               reinterpret_cast<FRM_INT8_PTR *>(&public_key_der),
                                               reinterpret_cast<FRM_INT8_PTR *>(&private_key_cipher_by_lmk));
         if(err){
@@ -331,7 +340,7 @@ namespace datacloak{
         );
         if(err != 0){
             LOG(ERROR) << "driverEF_SM2PublicKeyVerifyWithDataDigest failed, errno[" << err << "]";
-            LOG(INFO) << "key_index[" << index <<"],sign["<<sign <<"],msg[" << msg <<"]";
+            LOG(INFO) << "key_index[" << index <<"],sign["<< sign <<"],msg[" << msg <<"]";
             return false;
         }
         LOG(INFO) << "driverEF_SM2PublicKeyVerifyWithDataDigest succeed";
