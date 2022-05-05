@@ -123,7 +123,9 @@ namespace datacloak{
                                          IssueGmCertResponse *response) {
         LOG(INFO) << __FUNCTION__ ;
         LOG(INFO) << "\n" << "client pub key:\n" << request->client_pub_pem() << "\ncname[" << request->cname() <<"]";
-        std::string client_cert = Crypto::IssueGmCert(request->client_pub_pem(), request->cname());
+        std::string client_cert = Crypto::IssueGmCert(request->client_pub_pem(),request->cname(),true, "10");
+
+        //std::string client_cert = Crypto::IssueGmCert(request->client_pub_pem(),request->cname());
         if(!client_cert.empty()){
             response->set_error_code(server::DC_OK);
             response->set_error_message("succeed");
