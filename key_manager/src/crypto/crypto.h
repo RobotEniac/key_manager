@@ -23,7 +23,7 @@ namespace datacloak{
         static std::string SM2_sign_with_sm3(const std::string &data, const std::string &key_index);
         static bool SM2_verify_with_sm3(const std::string& index, const std::string &sign,const std::string& msg);
 
-        static std::string IssueGmCert(const std::string& pub, const std::string& name);
+        static std::string IssueGmCert(const std::string& pub, const std::string& name, bool use_engine = false, std::string key_index = "-1");
         static void SetRootKeys(const std::string& root_cert, const std::string& root_private_key);
         static void SetKeyIndex(std::string& index);
 

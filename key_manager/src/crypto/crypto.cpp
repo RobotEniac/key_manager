@@ -437,13 +437,16 @@ namespace datacloak{
         memcpy(buff, password, len);
         return len;
     }
-    std::string Crypto::IssueGmCert(const std::string &pub, const std::string &name) {
+    std::string Crypto::IssueGmCert(const std::string &pub, const std::string &name, bool use_engine, std::string key_index) {
 
         X509 *x509 = nullptr;
         EVP_PKEY *pk_ca = nullptr;
         EC_KEY *ec_key = nullptr;
         X509_NAME *x509_name = nullptr;
         std::string cert_str = "";
+        ENGINE *engine = nullptr;
+        bool engin_init_flag = false;
+        int err = 0;
         do{
             pk_ca = EVP_PKEY_new();
             if(pk_ca == nullptr){
@@ -456,30 +459,28 @@ namespace datacloak{
                 std::cout << "X509_new error";
                 break;
             }
-            BIO *ca_key_bio = BIO_new_mem_buf(ca_private_key.c_str(), -1);
-            EC_KEY *ec_ca_key = PEM_read_bio_ECPrivateKey(ca_key_bio,  NULL, password, NULL);
-            if(!ec_ca_key){
-                LOG(ERROR) << "read ca key failed";
-                break;
+            if(!use_engine){
+                BIO *ca_key_bio = BIO_new_mem_buf(ca_private_key.c_str(), -1);
+                EC_KEY *ec_ca_key = PEM_read_bio_ECPrivateKey(ca_key_bio,  NULL, password, NULL);
+                if(!ec_ca_key){
+                    LOG(ERROR) << "read ca key failed";
+                    break;
+                }
+                err = EVP_PKEY_assign_EC_KEY(pk_ca, ec_ca_key);
+                if(err == 0){
+                    std::cout << "EVP_PKEY_assign_EC_KEY error";
+                    break;
+                }
+            }else{
+                engine = ENGINE_by_id(ENGINE_NAME);
+                BREAK_NULL(engine, "ENGINE_by_id");
+                err = ENGINE_init(engine);
+                BREAK_ERRNO(err, "ENGINE_init");
+                engin_init_flag = true;
+                pk_ca = ENGINE_load_private_key(engine, key_index.c_str(), nullptr, nullptr);
+                BREAK_NULL(pk_ca, "ENGINE_load_private_key");
             }
-
-#if 0
-            ec_key = EC_KEY_new_by_curve_name(NID_sm2);
-            if(!ec_key){
-                std::cout << "EC_KEY_new failed";
-                break;
-            }
-            int ret = EC_KEY_generate_key(ec_key);
-            if(ret == 0){
-                std::cout << "EC_KEY_generate_key failed";
-                break;
-            }
-#endif
-            int err = EVP_PKEY_assign_EC_KEY(pk_ca, ec_ca_key);
-            if(err == 0){
-                std::cout << "EVP_PKEY_assign_EC_KEY error";
-                break;
-            }
+            
             // read client pub key
             BIO *client_key_bio = BIO_new_mem_buf(pub.c_str(), -1);
             EC_KEY *ec_client_key = PEM_read_bio_EC_PUBKEY(client_key_bio,  NULL, NULL, NULL);
@@ -513,14 +514,14 @@ namespace datacloak{
 
             X509_set_issuer_name(x509, issuer_name);
             x509_name = X509_get_subject_name(x509);
-#if 1
+
             X509_NAME_add_entry_by_txt(x509_name, "C", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("CN"), -1, -1, 0);
             X509_NAME_add_entry_by_txt(x509_name, "ST", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("Guangdong"), -1, -1, 0);
             X509_NAME_add_entry_by_txt(x509_name, "L", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("Shenzhen"), -1, -1, 0);
             X509_NAME_add_entry_by_txt(x509_name, "O", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("DataCloak"), -1, -1, 0);
             X509_NAME_add_entry_by_txt(x509_name, "OU", MBSTRING_ASC, reinterpret_cast<const unsigned char *>("AUTH"), -1, -1, 0);
             X509_NAME_add_entry_by_txt(x509_name, "CN", MBSTRING_ASC, reinterpret_cast<const unsigned char *>(name.c_str()), -1, -1, 0);
-#endif
+
             add_ext(x509, NID_basic_constraints, const_cast<char *>("critical,CA:FALSE"));
             add_ext(x509, NID_ext_key_usage, const_cast<char *>("TLS Web Client Authentication,TLS Web Server Authentication "));
             add_ext(x509, NID_key_usage, const_cast<char *>("critical,Digital Signature,Certificate Sign,CRL Sign "));
@@ -543,6 +544,12 @@ namespace datacloak{
             int len = BIO_read(client_cert_bio, cert_buf, 102400);
             cert_str.assign(cert_buf, cert_buf + len);
         } while (false);
+        if(engine){
+            if(engin_init_flag){
+                ENGINE_finish(engine);
+            }
+            ENGINE_free(engine);
+        }
         return cert_str;
 
 #if 0
@@ -872,7 +879,7 @@ namespace datacloak{
         X509_REQ** req = (X509_REQ**)ppreq;
         bool engin_init_flag = false;
         do {
-            if (!engin_name) {
+            if (!engine_name) {
                 LOG(ERROR) << "please set a correct engine name";
                 err = -1;
                 break;
@@ -883,7 +890,7 @@ namespace datacloak{
                 break;
             }
 
-            engine = ENGINE_by_id(engin_name);
+            engine = ENGINE_by_id(engine_name);
             BREAK_ERRNO(err, "ENGINE_by_id" );
             err = ENGINE_init(engine);
             BREAK_ERRNO(err, "ENGINE_init");
@@ -945,7 +952,7 @@ namespace datacloak{
         EVP_PKEY* pkey = nullptr;
         BIO* bio = nullptr;
         do {
-            if (!engin_name) {
+            if (!engine_name) {
                 LOG(ERROR) << "please set a correct engine name";
                 err = -1;
                 break;
@@ -956,7 +963,7 @@ namespace datacloak{
                 break;
             }
 
-            engine = ENGINE_by_id(engin_name);
+            engine = ENGINE_by_id(engine_name);
             BREAK_ERRNO(err, "ENGINE_by_id" );
             err = ENGINE_init(engine);
             BREAK_ERRNO(err, "ENGINE_init");
