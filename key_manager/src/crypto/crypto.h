@@ -30,6 +30,8 @@ namespace datacloak{
         static std::string SM2_Encrypt(const std::string& msg, const std::string& pub_key_idx);
         static std::string SM2_Decrypt(const std::string& msg, const std::string& pri_key_idx);
 
+        static std::string GenerateRandomNumber(const std::string& length);
+
         static void GlobalInit();
 
         static void TestCA();

@@ -21,8 +21,18 @@ service KeyManager {
   // symmetric algorithm
   rpc SymEncrypt(SymEncryptRequest) returns (SymEncryptResponse) {}
   rpc SymDecrypt(SymDecryptRequest) returns (SymDecryptResponse) {}
+
+  rpc GenerateRandomNumber(GenerateRandomNumberRequest) returns (GenerateRandomNumberResponse){}
 }
 
+message GenerateRandomNumberRequest{
+  string length = 1;
+}
+message GenerateRandomNumberResponse{
+  DataCloakErrorCode error_code = 1;
+  string error_message = 2;
+  string number = 3;
+}
 message AsymDecryptRequest{
   CryptoAlgType type = 1;
   bytes msg = 2;
@@ -127,6 +137,7 @@ enum DataCloakErrorCode{
   DC_KEY_MANAGER_SM3_HASH_UNKNOWN_TYPE = 20000002;
   DC_KEY_MANAGER_SM3_GENERATE_CERT_ERROR = 20000003;
   DC_KEY_MANAGER_SM3_VERIFY_MSG_SIGN_FAILED = 20000004;
+  DC_KEY_MANAGER_GENERATE_RANDOM_NUMBER_FAILED = 20000005;
   //AsymEncrypt/AsymDecrypt
   DC_CRYPTO_ALG_INVALID = 30000001;
   DC_CRYPTO_FAILED = 30000002;

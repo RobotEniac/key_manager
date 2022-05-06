@@ -887,4 +887,16 @@ namespace datacloak{
         }
         return err;
     }
+
+    std::string Crypto::GenerateRandomNumber(const std::string &length) {
+        char *random = nullptr;
+        char *len = (char*)length.c_str();
+        int err = driverCR_GenerateRandomNumber(len, &random);
+        if(err != 0){
+            LOG(ERROR) << "driverCR_GenerateRandomNumber error, error[" << err << "]";
+            return "";
+        }
+        return std::string{random};
+    }
+
 }

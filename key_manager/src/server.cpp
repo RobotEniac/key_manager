@@ -198,6 +198,21 @@ namespace datacloak{
         }
         return Status::OK;
     }
+
+    Status KeyManagerServer::GenerateRandomNumber(ServerContext *context, const GenerateRandomNumberRequest *request,
+                                                  GenerateRandomNumberResponse *response) {
+        std::string number = Crypto::GenerateRandomNumber(request->length());
+        if(number.empty()){
+            response->set_error_code(server::DC_KEY_MANAGER_GENERATE_RANDOM_NUMBER_FAILED);
+            response->set_error_message("DC_KEY_MANAGER_GENERATE_RANDOM_NUMBER_FAILED");
+
+        }else{
+            response->set_error_code(server::DC_OK);
+            response->set_error_message("succeed");
+        }
+        response->set_number(number);
+        return Status::OK;
+    }
 }
 
 
