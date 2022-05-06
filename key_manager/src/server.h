@@ -30,6 +30,11 @@ using datacloak::server::Sm2VerifyWithSm3Response;
 using datacloak::server::IssueGmCertRequest;
 using datacloak::server::IssueGmCertResponse;
 
+//generate random number
+
+using datacloak::server::GenerateRandomNumberRequest;
+using datacloak::server::GenerateRandomNumberResponse;
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -44,7 +49,7 @@ class KeyManagerServer final : public datacloak::server::KeyManager::Service{
         Status Sm2SignWithSm3(ServerContext* context, const Sm2SignWithSm3Request* request, Sm2SignWithSm3Response* response)override;
         Status Sm2VerifyWithSm3(ServerContext* context, const Sm2VerifyWithSm3Request* request, Sm2VerifyWithSm3Response* response)override;
         Status IssueGmCert(ServerContext* context, const IssueGmCertRequest* request, IssueGmCertResponse* response)override;
-
+        Status GenerateRandomNumber(ServerContext* context, const GenerateRandomNumberRequest* request, GenerateRandomNumberResponse* response)override;
 
 public:
     static void RunServer(const std::string& ca_cert_path,
