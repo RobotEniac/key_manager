@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
 
 
     datacloak::Crypto::GenerateECCKey(private_key_index);
+    datacloak::Crypto::GenerateECCKey("58", "for encrypt");
     datacloak::Crypto::SetKeyIndex(private_key_index);
     if(ca_cert_path == "" || ca_private_key_path == ""){
         LOG(ERROR) << "Need to set root ca info";

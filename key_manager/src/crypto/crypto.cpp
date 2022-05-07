@@ -332,6 +332,7 @@ namespace datacloak{
 
     bool Crypto::SM2_verify_with_sm3(const std::string &index, const std::string &sign, const std::string &msg) {
         std::string hash = sm3_hash(msg);
+
         int err = driverEF_SM2PublicKeyVerifyWithDataDigest(
                 "0",
                 (char*)sign.c_str(),
@@ -343,7 +344,7 @@ namespace datacloak{
             LOG(INFO) << "key_index[" << index <<"],sign["<< sign <<"],msg[" << msg <<"]";
             return false;
         }
-        LOG(INFO) << "driverEF_SM2PublicKeyVerifyWithDataDigest succeed";
+        LOG(INFO) << "driverEF_SM2PublicKeyVerifyWithDataDigest succeed"<< "\nmsg[" << msg << "]\nhash[" << hash << "]\nsign[" << sign << "]";
         return true;
     }
 
@@ -409,8 +410,8 @@ namespace datacloak{
             return "";
         }
         LOG(INFO) << "driverED_SM2PrivateKeySignWithDataDigest succeed";
-		std::cout << "hash:" << hash << "\n";
-        printf("signature:%s\n",signature);
+        LOG(INFO) << "\norigin_data[" << data << "]\nhash[" << hash << "]\nsignature[" << signature <<"]";
+
 		err = driverEF_SM2PublicKeyVerifyWithDataDigest(
 				"0",
 				signature,
@@ -606,6 +607,7 @@ namespace datacloak{
             return "";
         }
         else {
+            LOG(INFO) << "driverE3_SM2PublicKeyEncrypt:\n" << "original_msg[" << msg << "]\nencrypt_data[" << cipher << "]";
             std::string ret_s(cipher);
             driver_Free(&cipher);
             return ret_s;
@@ -642,6 +644,7 @@ namespace datacloak{
             std::string ret_s(data);
             free(data);
             driver_Free(&text);
+            LOG(INFO) << "driverE4_SM2PrivateKeyDecrypt:\n" << "original_msg[" << msg << "]\ndecrypt_data[" << ret_s << "]";
             return ret_s;
         }
 
