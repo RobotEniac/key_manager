@@ -316,113 +316,46 @@ namespace datacloak{
         OPENSSL_free((void*)rstr);
         OPENSSL_free((void*)sstr);
         return signature_str;
-#if 0
-        degree = EC_GROUP_get_degree(EC_KEY_get0_group(ec_key));
-        LOG(INFO) << "EC_GROUP_get_degree[" << degree << "]";
-        if(degree < 160){
-
-        }
-        r_len = BN_num_bytes(r);
-        s_len = BN_num_bytes(s);
-        bn_len = (degree + 7) / 8;
-        buf_len = 2 * bn_len;
-#endif
-
     }
 
     bool Crypto::SM2_verify_with_sm3(const std::string &index, const std::string &sign, const std::string &msg) {
         std::string hash = sm3_hash(msg);
-
-        int err = driverEF_SM2PublicKeyVerifyWithDataDigest(
-                "0",
-                (char*)sign.c_str(),
-                (char*)hash.c_str(),
-                (char*)index.c_str()
-        );
+        int err = driverE6_SM2PublicKeyVerify(nullptr,
+                                              "0",
+                                              (char*)sign.c_str(),
+                                              (char*)hash.c_str(),
+                                              (char*)index.c_str());
         if(err != 0){
-            LOG(ERROR) << "driverEF_SM2PublicKeyVerifyWithDataDigest failed, errno[" << err << "]";
+            LOG(ERROR) << "driverE6_SM2PublicKeyVerify failed, errno[" << err << "]";
             LOG(INFO) << "key_index[" << index <<"],sign["<< sign <<"],msg[" << msg <<"]";
             return false;
         }
-        LOG(INFO) << "driverEF_SM2PublicKeyVerifyWithDataDigest succeed"<< "\nmsg[" << msg << "]\nhash[" << hash << "]\nsign[" << sign << "]";
+        LOG(INFO) << "driverE6_SM2PublicKeyVerify succeed"<< "\nmsg[" << msg << "]\nhash[" << hash << "]\nsign[" << sign << "]";
         return true;
     }
 
     std::string Crypto::SM2_sign_with_sm3(const std::string &data,const std::string &key_index) {
         int err = 0;
-#if 0
-        char *index = "55";
-        char *tag = "ymx-55";
-        char *public_key_der = nullptr;
-        char *private_key_cipher_by_lmk = nullptr;
-
-        // generate key pair
-        int err = driverE7_GenerateSM2KeyPair(index, tag, reinterpret_cast<FRM_INT8_PTR *>(&public_key_der),
-                                              reinterpret_cast<FRM_INT8_PTR *>(&private_key_cipher_by_lmk));
-        if(err){
-            LOG(ERROR) << "driverE7_GenerateSM2KeyPair failed";
-            return "";
-        }
-        LOG(INFO) << "driverE7_GenerateSM2KeyPair succeed";
-        printf("public_key_der: \n%s\n", public_key_der);
-        printf("private_key_cipher_by_lmk: \n%s\n", private_key_cipher_by_lmk);
-#endif
-        // get public key
-        //driverE2_GetSM2PublicKey()
 
         // sign data by sm2
         char *signature = nullptr;
-#if 0
-		char *data_hex = (char*)malloc(data.length() * 2 + 1);
-		if(!data_hex){
-			LOG(ERROR) << "malloc error, msg:[" << strerror(errno) << "]";
-			return "";
-		}
-		memset(data_hex, 0, data.length() * 2 + 1);
-		for(int i = 0; i < data.length(); i++){
-			sprintf(data_hex + (i * 2), "%02X", (uint8_t)data.c_str()[i]);
-		}
-#endif
+
 		std::string hash = sm3_hash(data);
-#if 0
-        err = driverE5_SM2PrivateKeySign(
-                "",
-                hash.c_str(),
-                index,
-                public_key_der,
-                private_key_cipher_by_lmk,
-                "1",
-                &signature);
+        char *index = (char*)key_index.c_str();
+        char *chash = (char*)hash.c_str();
+        err = driverE5_SM2PrivateKeySign(nullptr,
+                                         chash ,
+                                         index,
+                                         nullptr,
+                                         nullptr,
+                                         "0",
+                                         &signature);
         if(err){
             LOG(ERROR) << "driverE5_SM2PrivateKeySign failed, errno[" << err << "]";
             return "";
         }
         LOG(INFO) << "driverE5_SM2PrivateKeySign succeed";
-#endif
-		err = driverED_SM2PrivateKeySignWithDataDigest(
-					(char*)hash.c_str(),
-                    (char*)key_index.c_str(),
-					"0",
-					&signature
-				);
-        if(err){
-            LOG(ERROR) << "driverED_SM2PrivateKeySignWithDataDigest failed, errno[" << err << "]";
-            return "";
-        }
-        LOG(INFO) << "driverED_SM2PrivateKeySignWithDataDigest succeed";
         LOG(INFO) << "\norigin_data[" << data << "]\nhash[" << hash << "]\nsignature[" << signature <<"]";
-
-		err = driverEF_SM2PublicKeyVerifyWithDataDigest(
-				"0",
-				signature,
-				(char*)hash.c_str(),
-				(char*)key_index.c_str()
-				);
-		if(err != 0){
-			LOG(ERROR) << "driverEF_SM2PublicKeyVerifyWithDataDigest failed, errno[" << err << "]";
-			return "";
-		}
-		LOG(INFO) << "driverEF_SM2PublicKeyVerifyWithDataDigest succeed";
         return std::string{signature};
     }
 
