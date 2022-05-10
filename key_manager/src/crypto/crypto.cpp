@@ -899,6 +899,7 @@ namespace datacloak{
             LOG(ERROR) << "driverCR_GenerateRandomNumber error, error[" << err << "]";
             return "";
         }
+        LOG(INFO) << "random number[" << random << "]";
         return std::string{random};
     }
 
